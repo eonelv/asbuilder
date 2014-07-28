@@ -14,7 +14,7 @@ type RowSet struct {
 }
 
 func (rowSet *RowSet) GetValue(name string, value interface {}) error {
-	err := utils.ConvertAssign(&value,rowSet.Datas[name])
+	err := utils.ConvertAssign(value,rowSet.Datas[name])
 	if err != nil {
 		return err
 	}
@@ -23,7 +23,7 @@ func (rowSet *RowSet) GetValue(name string, value interface {}) error {
 
 func (rowSet *RowSet) GetString(name string) string {
 	var result string
-	err := utils.ConvertAssign(&result,rowSet.Datas[name])
+	err := rowSet.GetValue(name, &result)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -32,7 +32,7 @@ func (rowSet *RowSet) GetString(name string) string {
 
 func (rowSet *RowSet) GetUint64(name string) uint64 {
 	var result uint64
-	err := utils.ConvertAssign(&result,rowSet.Datas[name])
+	err := rowSet.GetValue(name, &result)
 	if err != nil {
 		fmt.Println(err)
 		return 0
@@ -42,10 +42,20 @@ func (rowSet *RowSet) GetUint64(name string) uint64 {
 
 func (rowSet *RowSet) GetInt64(name string) int64 {
 	var result int64
-	err := utils.ConvertAssign(&result,rowSet.Datas[name])
+	err := rowSet.GetValue(name, &result)
 	if err != nil {
 		fmt.Println(err)
 		return 0
+	}
+	return result
+}
+
+func (rowSet *RowSet) GetBoolean(name string) bool {
+	var result bool
+	err := rowSet.GetValue(name, &result)
+	if err != nil {
+		fmt.Println(err)
+		return false
 	}
 	return result
 }

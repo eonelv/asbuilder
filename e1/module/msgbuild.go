@@ -62,8 +62,12 @@ func (this *MsgBuild) build(user *User, cmds string) {
 	var err error
 	project := &Project{}
 	utils.Byte2Struct(reflect.ValueOf(project), this.PData)
-	rows, err1 := mgr.DBMgr.PreQuery("select * from t_vb_project where id = ?", project.ID)
+	rows, err1 := mgr.DBMgr.PreQuery("select pname_en, pvname_en, isBuilding from t_vb_project where id = ?", project.ID)
 	if err1 != nil {
+		return
+	}
+	isBuilding := rows[0].GetBoolean("isBuilding")
+	if isBuilding {
 		return
 	}
 	projectName := rows[0].GetString("pname_en")
@@ -99,8 +103,7 @@ func (this *MsgBuild) build(user *User, cmds string) {
 		return
 	}
 	msgReturn.PData = tempData
-	user.Sender.Send(msgReturn)
-
+	UserMgr.BroadcastMessage(msgReturn)
 	//执行编译
 	cmd := exec.Command(cmds, "", "")
 
@@ -118,7 +121,7 @@ func (this *MsgBuild) build(user *User, cmds string) {
 		return
 	}
 	msgReturn.PData = tempData
-	user.Sender.Send(msgReturn)
+	UserMgr.BroadcastMessage(msgReturn)
 	fmt.Println("编译完成", cmds)
 }
 
@@ -135,17 +138,14 @@ func (this *MsgBuild) query(user *User) {
 		project.ID = v.GetUint64("id")
 		utils.CopyArray(reflect.ValueOf(&project.Name), []byte(v.GetString("pname")))
 		utils.CopyArray(reflect.ValueOf(&project.Version), []byte(v.GetString("pvname")))
-		if v.GetString("isBuilding") == "true" {
+		if v.GetBoolean("isBuilding") {
 			utils.CopyArray(reflect.ValueOf(&project.Builder), []byte(user.ID))
 		}
-
 		data,_ := utils.Struct2Bytes(reflect.ValueOf(project))
 		totalData = append(totalData, data ...)
 	}
 
 	this.PData = totalData
 	user.Sender.Send(this)
-
-	fmt.Printf("MsgBuild:: Process %s's MsgBuild End\n", user.ID)
 }
 

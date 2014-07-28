@@ -12,4 +12,5 @@ const (
 
 const (
 	SYSTEM_CHAN_ID ObjectID = "systemchanid"
+	SYSTEM_USER_CHAN_ID ObjectID = "systemuserchanid"
 )

@@ -101,21 +101,19 @@ func (client *TCPClient) processLogin(header *PackHeader, datas []byte) {
 	type MSG_CONNECT struct {
 		Connet byte
 	}
-	msg := &MSG_CONNECT{}
-	Byte2Struct(reflect.ValueOf(msg), datas)
+
 	client.isLogin = true
+	go client.Sender.Start()
 
-	CreateUser(client.ID)
-	ch := GetChanByID(client.ID)
-
+	systemChan := GetChanByID(SYSTEM_USER_CHAN_ID)
 	client.dataChan = make(chan *Command)
-	msgSend := &Command{CMD_USER_LOGIN, nil, client.dataChan, nil}
+	msgSend := &Command{CMD_SYSTEM_USER_LOGIN, client.ID, client.dataChan, nil}
 	msgSend.OtherInfo = client.Sender
 
 	select {
-	case ch <- msgSend:
+	case systemChan <- msgSend:
 	case <-time.After(5 * time.Second):
-		fmt.Println("loginUserToGame put user channel failed:", msg.Connet)
+		fmt.Println("loginUserToGame put user channel failed:", CMD_SYSTEM_USER_LOGIN)
 	}
 	client.waitLoginReturn()
 }
@@ -137,7 +135,7 @@ func (client *TCPClient) routMsgToUser(header *PackHeader, data []byte) bool {
 	select {
 	case client.userChan <- msg:
 	case <-time.After(5 * time.Second):
-		fmt.Println("routMsgToUser put user channel failed:", client.ID)
+		fmt.Println("routMsgToUser put user channel failed:", client.ID, UserMgr.users[client.ID].Status)
 		return false
 	}
 
@@ -149,7 +147,7 @@ func (client *TCPClient) close() {
 		return
 	}
 	userInnerChan := GetChanByID(client.ID)
-	closeMsg := &Command{CMD_USER_OFFLINE, nil, client.dataChan, nil}
+	closeMsg := &Command{CMD_SYSTEM_USER_OFFLINE, nil, client.dataChan, nil}
 	client.isLogin = false
 
 	select {

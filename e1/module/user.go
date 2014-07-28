@@ -3,7 +3,6 @@ package module
 import (
 	"fmt"
 	. "e1/core"
-	. "e1/mgr"
 	"e1/mgr"
 )
 
@@ -27,24 +26,24 @@ func CreateUser(id ObjectID) *User{
 	user.ID = id
 	user.recvChan = make(chan *Command)
 	user.innerChan = make(chan *Command)
-	RegisterChan(id, user.innerChan)
+	mgr.RegisterChan(id, user.innerChan)
 
 	user.Status = USER_STATUS_INIT
-	go startRecv(user)
+	go startUserRecv(user)
 
 	return user
 }
 
-func startRecv(user *User) {
+func startUserRecv(user *User) {
 	for {
 		select {
 		case msg:=<-user.recvChan:
-			if msg == nil && user.Status == USER_STATUS_ONLINE{
+			if msg == nil && user.Status == USER_STATUS_OFFLINE{
 				return
 			}
 			user.processClientMessage(msg)
 		case msg:= <-user.innerChan:
-			if msg == nil && user.Status == USER_STATUS_ONLINE{
+			if msg == nil && user.Status == USER_STATUS_OFFLINE{
 				return
 			}
 			user.processInnerMessage(msg)
@@ -70,9 +69,9 @@ func (user *User) processInnerMessage(msg *Command) {
 		 return
 	 }
 	switch msg.Cmd{
-	case CMD_USER_LOGIN:
+	case CMD_SYSTEM_USER_LOGIN:
 		user.userLogin(msg)
-	case CMD_USER_OFFLINE:
+	case CMD_SYSTEM_USER_OFFLINE:
 		user.userOffline(msg)
 	}
 }
@@ -94,5 +93,6 @@ func (user *User) userOffline(msg *Command) {
 	close(user.recvChan)
 	close(user.innerChan)
 	user.Sender.Close()
-	user.Status = USER_STATUS_ONLINE
+	user.Status = USER_STATUS_OFFLINE
+	fmt.Println("User offline", user.ID)
 }
