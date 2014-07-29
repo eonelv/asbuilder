@@ -3,6 +3,7 @@ package core
 import (
 	"net"
 	"fmt"
+	. "e1/log"
 )
 
 type TCPSender struct {
@@ -30,7 +31,7 @@ func (sender *TCPSender) Send(msg NetMsg) {
 func (sender *TCPSender) SendBytes(bytes []byte) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println(err)
+			LogError(err)
 		}
 	}()
 	sender.dataChan <- bytes
@@ -44,7 +45,7 @@ func (sender *TCPSender) send(datas []byte)  bool{
 	}()
 	n, err := sender.conn.Write(datas)
 	if err != nil {
-		fmt.Println("TcpSender send error:", n, "reason:", err)
+		LogError(fmt.Sprintf("TcpSender send error:", n, "reason:", err))
 		sender.conn.CloseWrite()
 		return false
 	}
@@ -54,7 +55,7 @@ func (sender *TCPSender) send(datas []byte)  bool{
 func (sender *TCPSender) Start() {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println(err)
+			LogError(err)
 		}
 	}()
 	for {
@@ -76,7 +77,7 @@ func (sender *TCPSender) Start() {
 func (sender *TCPSender) Close() {
 	defer func() {
 		if x := recover(); x != nil {
-			fmt.Println("TcpSender Close failed", x)
+			LogError("TcpSender Close failed", x)
 		}
 	}()
 	sender.exit <- true

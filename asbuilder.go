@@ -6,10 +6,11 @@ import (
 	. "e1/core"
 	. "e1/module"
 	"e1/mgr"
-	"fmt"
 	"e1/cfg"
+	_ "e1/cfg"
 	"runtime"
-	"e1/log"
+	. "e1/log"
+	_ "e1/log"
 )
 
 func main() {
@@ -17,22 +18,18 @@ func main() {
 }
 
 func Start() {
-	logger ,err := log.CreateLogger("goserver.log")
-	if err != nil{
-		fmt.Println("Create syslog file error.")
-		return
-	}
-	log.LoggerSys = logger
+
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	logger.Println("")
-	logger.Println("---------------------------------")
-	logger.Printf("服务器为%d核", runtime.NumCPU())
-	if !cfg.LoadCfg() {
-		log.LoggerSys.Print("Load server config error.")
+	cfgOK, cfgErr := cfg.LoadCfg()
+	LogInfo("")
+	LogInfo("---------------------------------")
+	if !cfgOK {
+		LogInfo("Load server config error.", cfgErr)
 		os.Exit(100)
 	}
+	LogInfo("Load server config success.")
 	if !mgr.CreateDBMgr(cfg.ServerCfg[cfg.SERVER_HOME] + "/" + cfg.ServerCfg[cfg.DB_NAME]) {
-		log.LoggerSys.Print("Connect dataBase error")
+		LogError("Connect dataBase error")
 		os.Exit(101)
 	}
 	mgr.CreateChanMgr()
@@ -40,11 +37,11 @@ func Start() {
 	sysChan := make(chan *Command)
 	mgr.RegisterChan(SYSTEM_CHAN_ID, sysChan)
 	go processTCP()
-	logger.Println("服务器启动成功")
+	LogInfo("Server bootup success.")
 	for {
 		select {
 		case msg := <-sysChan:
-			log.LoggerSys.Print("main recv msg:", msg.Cmd)
+			LogInfo("main recv msg:", msg.Cmd)
 			if msg.Cmd == CMD_SYSTEM_MAIN_CLOSE {
 				return
 			}
@@ -54,7 +51,7 @@ func Start() {
 
 func checkError(err error){
 	if err != nil {
-		fmt.Println(err)
+		LogError(err)
 		os.Exit(0)
 	}
 }

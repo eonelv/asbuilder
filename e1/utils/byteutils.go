@@ -2,9 +2,9 @@ package utils
 
 import (
 	"reflect"
-	"fmt"
 	"encoding/binary"
 	"bytes"
+	. "e1/log"
 )
 
 func Struct2Bytes(this reflect.Value) ([]byte, bool) {
@@ -25,13 +25,13 @@ func Struct2Bytes(this reflect.Value) ([]byte, bool) {
 			strValue := f.Interface().(string)
 			err := binary.Write(binData, binary.BigEndian, []byte(strValue))
 			if err != nil {
-				fmt.Println("StructToBytes err. ", f.Kind())
+				LogError("StructToBytes err. ", f.Kind())
 				return nil, false
 			}
 		} else {
 			err := binary.Write(binData, binary.BigEndian, f.Interface())
 			if err != nil {
-				fmt.Println("StructToBytes err. ", f.Kind())
+				LogError("StructToBytes err. ", f.Kind())
 				return nil, false
 			}
 		}
@@ -93,7 +93,7 @@ func Byte2Struct(dataType reflect.Value, bytes1 []byte) (bool, int) {
 			index += cap
 		case reflect.Slice:
 			if i+1 != numField {
-				fmt.Println("BytesToStruct slice must be last element")
+				LogError("BytesToStruct slice must be last element")
 				return false, 0
 			}
 			temp := bytes1[index:]

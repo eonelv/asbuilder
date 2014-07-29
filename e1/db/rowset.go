@@ -2,7 +2,7 @@ package db
 
 import (
 	"e1/utils"
-	"fmt"
+	. "e1/log"
 )
 
 /*
@@ -25,7 +25,7 @@ func (rowSet *RowSet) GetString(name string) string {
 	var result string
 	err := rowSet.GetValue(name, &result)
 	if err != nil {
-		fmt.Println(err)
+		LogError(err)
 	}
 	return result
 }
@@ -34,7 +34,7 @@ func (rowSet *RowSet) GetUint64(name string) uint64 {
 	var result uint64
 	err := rowSet.GetValue(name, &result)
 	if err != nil {
-		fmt.Println(err)
+		LogError(err)
 		return 0
 	}
 	return result
@@ -44,7 +44,7 @@ func (rowSet *RowSet) GetInt64(name string) int64 {
 	var result int64
 	err := rowSet.GetValue(name, &result)
 	if err != nil {
-		fmt.Println(err)
+		LogError(err)
 		return 0
 	}
 	return result
@@ -54,7 +54,7 @@ func (rowSet *RowSet) GetBoolean(name string) bool {
 	var result bool
 	err := rowSet.GetValue(name, &result)
 	if err != nil {
-		fmt.Println(err)
+		LogError(err)
 		return false
 	}
 	return result

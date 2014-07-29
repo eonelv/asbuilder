@@ -8,8 +8,8 @@ type Command struct {
 }
 
 type PackHeader struct {
-	Tag uint16
-	Version uint16
+	Tag uint16 "TAG"
+	Version uint16 "VERSION"
 	Length uint16
 	Cmd uint16
 }

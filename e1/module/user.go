@@ -4,6 +4,7 @@ import (
 	"fmt"
 	. "e1/core"
 	"e1/mgr"
+	. "e1/log"
 )
 
 const (
@@ -57,7 +58,7 @@ func (user *User) processClientMessage(msg *Command) {
 	}
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("User processClientMsg failed:", err, " cmd:", msg.Cmd)
+			LogError("User processClientMsg failed:", err, " cmd:", msg.Cmd)
 		}
 	}()
 	netMsg := CreateMessage(msg)
@@ -88,7 +89,7 @@ func (user *User) userLogin(msg *Command) {
 func (user *User) userOffline(msg *Command) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println("User processClientMsg failed:", err, " cmd:", msg.Cmd)
+			LogError("User processClientMsg failed:", err, " cmd:", msg.Cmd)
 		}
 	}()
 	if msg.RetChan != user.netChan {

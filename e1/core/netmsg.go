@@ -17,7 +17,7 @@ func GenNetBytes(cmd uint16, values reflect.Value) ([]byte,bool) {
 		return nil,false
 	}
 	length := uint16(HEADER_LENGTH + uint16(len(datas)))
-	header := &PackHeader{0,0,length,cmd}
+	header := &PackHeader{TAG, VERSION, length, cmd}
 	headerDatas,okh := Struct2Bytes(reflect.ValueOf(header))
 	if !okh {
 		return nil, false

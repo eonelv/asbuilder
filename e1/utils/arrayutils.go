@@ -2,13 +2,13 @@ package utils
 
 import (
 	"reflect"
-	"fmt"
+	. "e1/log"
 )
 
 func CopyArray(dest reflect.Value, src []byte) bool {
 	defer func() {
 		if x := recover(); x != nil {
-			fmt.Println("CopyArray failed:", x)
+			LogError("CopyArray failed:", x)
 		}
 	}()
 	return reflect.Copy(dest.Elem(), reflect.ValueOf(src)) > 0

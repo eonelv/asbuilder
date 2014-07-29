@@ -5,10 +5,10 @@ import (
 	. "e1/core"
 	. "e1/utils"
 	. "e1/mgr"
+	. "e1/log"
 )
 
 import (
-	"fmt"
 	"time"
 	"io"
 	"reflect"
@@ -31,7 +31,7 @@ type TCPClient struct {
 func ProcessRecv(client *TCPClient) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println(err)    //这里的err其实就是panic传入的内容
+			LogError(err)    //这里的err其实就是panic传入的内容
 		}
 	}()
 	conn := client.Conn
@@ -46,7 +46,7 @@ func ProcessRecv(client *TCPClient) {
 		headerBytes := make([]byte, HEADER_LENGTH)
 		_, err := io.ReadFull(conn, headerBytes)
 		if err != nil {
-			fmt.Println("Read Data Error", client.ID, err.Error())
+			LogError("Read Data Error", client.ID, err.Error())
 			break
 		}
 
@@ -54,20 +54,16 @@ func ProcessRecv(client *TCPClient) {
 			tempbuf := make([]byte, len(STR_AUTH_REQ)-int(HEADER_LENGTH))
 			_, err = io.ReadFull(conn, tempbuf)
 			if err != nil {
-				//log
-				fmt.Println("HandleUserConnect read rest auth req err", err)
+				LogError("HandleUserConnect read rest auth req err", err)
 				return
 			}
 			headerBytes = append(headerBytes, tempbuf...)
 			authReq := string(headerBytes)
 			if authReq == STR_AUTH_REQ {
 				conn.Write(append([]byte(STR_AUTH_RETURN), 0))
-				fmt.Println("send auth over.")
 			} else {
-				//log
-				fmt.Println("recv wrong auth req:", authReq)
+				LogError("recv wrong auth req:", authReq)
 			}
-
 			return
 		}
 		header := &PackHeader{}
@@ -76,12 +72,12 @@ func ProcessRecv(client *TCPClient) {
 		bodyBytes := make([]byte, header.Length-HEADER_LENGTH)
 		_, err = io.ReadFull(conn, bodyBytes)
 		if err != nil {
-			fmt.Println(err.Error())
+			LogError(err.Error())
 			break
 		}
 		client.processClientMessage(header, bodyBytes)
 	}
-	fmt.Println("TCPClient cant receive data no more")
+	LogInfo("TCPClient cant receive data no more")
 }
 
 func (client *TCPClient)processClientMessage(header *PackHeader, datas []byte) {
@@ -95,7 +91,7 @@ func (client *TCPClient)processClientMessage(header *PackHeader, datas []byte) {
 func (client *TCPClient) processLogin(header *PackHeader, datas []byte) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println(err)
+			LogError(err)
 		}
 	}()
 
@@ -110,7 +106,7 @@ func (client *TCPClient) processLogin(header *PackHeader, datas []byte) {
 	select {
 	case systemChan <- msgSend:
 	case <-time.After(5 * time.Second):
-		fmt.Println("loginUserToGame put user channel failed:", CMD_SYSTEM_USER_LOGIN)
+		LogError("loginUserToGame put user channel failed:", CMD_SYSTEM_USER_LOGIN)
 	}
 	client.waitLoginReturn()
 }
@@ -132,7 +128,7 @@ func (client *TCPClient) routMsgToUser(header *PackHeader, data []byte) bool {
 	select {
 	case client.userChan <- msg:
 	case <-time.After(5 * time.Second):
-		fmt.Println("routMsgToUser put user channel failed:", client.ID, UserMgr.users[client.ID].Status)
+		LogError("routMsgToUser put user channel failed:", client.ID, UserMgr.users[client.ID].Status)
 		return false
 	}
 
@@ -150,7 +146,7 @@ func (client *TCPClient) close() {
 	select {
 	case userInnerChan <- closeMsg:
 	case <-time.After(5 * time.Second):
-		fmt.Println("sendOffline put user channel failed:", client.ID)
+		LogError("sendOffline put user channel failed:", client.ID)
 		return
 	}
 	return

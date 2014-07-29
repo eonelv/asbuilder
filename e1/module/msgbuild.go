@@ -7,8 +7,9 @@ import (
 	"e1/utils"
 	"e1/mgr"
 	"e1/cfg"
-	"e1/log"
 	"os/exec"
+	_ "e1/log"
+	. "e1/log"
 )
 
 const (
@@ -72,7 +73,7 @@ func (this *MsgBuild) build(user *User, cmds string) {
 	projectName := rows[0].GetString("pname_en")
 	buildName := rows[0].GetString("pvname_en")
 
-	cmds =  cfg.ServerCfg[cfg.SERVER_HOME] + "build/" +projectName + "/" + buildName + "/" + cmds;
+	cmds =  cfg.ServerCfg[cfg.SERVER_HOME] + "/build/" +projectName + "/" + buildName + "/" + cmds;
 
 	go execBuild(cmds, project, user, this)
 
@@ -114,10 +115,9 @@ func execBuild(cmds string, project *Project, user *User, msgBuild *MsgBuild) {
 	var bytes []byte
 	bytes, err = cmd.Output()
 	if err == nil {
-		log.LoggerSys.Println(string(bytes))
-		fmt.Println(string(bytes))
+		LogInfo(string(bytes))
 	} else {
-		log.LoggerSys.Println(err, string(bytes))
+		LogInfo(err, string(bytes))
 	}
 	msgBuildInfo.Result = 2
 	tempData, ok = utils.Struct2Bytes(reflect.ValueOf(msgBuildInfo))
@@ -127,7 +127,7 @@ func execBuild(cmds string, project *Project, user *User, msgBuild *MsgBuild) {
 	msgReturn.PData = tempData
 
 	defer UserMgr.BroadcastMessage(msgReturn)
-	fmt.Println("编译完成", cmds)
+	LogInfo("编译完成", cmds)
 }
 
 func (this *MsgBuild) query(user *User) {

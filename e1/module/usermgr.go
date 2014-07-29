@@ -4,7 +4,7 @@ import (
 	"e1/core"
 	"e1/mgr"
 	"time"
-	"fmt"
+	. "e1/log"
 )
 
 var UserMgr UserManager
@@ -45,13 +45,12 @@ func (this *UserManager) processUserLogin(msg *core.Command) {
 	id := msg.Message.(core.ObjectID)
 	u := CreateUser(id)
 
-	fmt.Println("User online", id)
 	this.users[id] = u
 
 	select {
 	case u.innerChan <- msg:
 	case <-time.After(10 * time.Second):
-		fmt.Println("new user busy :", id)
+		LogError("new user busy :", id)
 		return
 	}
 }
@@ -59,7 +58,7 @@ func (this *UserManager) processUserLogin(msg *core.Command) {
 func (this *UserManager)processBroadCast(msg core.NetMsg) {
 	for _, u := range this.users {
 		u.Sender.Send(msg)
-		fmt.Println("BroadcastMessage to User," ,u.ID, u.Status)
+		LogError("BroadcastMessage to User," ,u.ID, u.Status)
 	}
 }
 
@@ -67,7 +66,7 @@ func (this *UserManager)BroadcastMessage(msg core.NetMsg) {
 	cmd := &core.Command{core.CMD_SYSTEM_BROADCAST, msg, nil, nil}
 	select {
 	case this.systemChan <- cmd:
-		case <- time.After(20*time.Second):
+	case <- time.After(20*time.Second):
 			return
 	}
 }

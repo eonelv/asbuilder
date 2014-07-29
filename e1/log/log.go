@@ -4,58 +4,47 @@ import (
 	"os"
 	"log"
 	"fmt"
+	"time"
+	"strings"
 )
 
 type ELogger struct {
-	Log *log.Logger
-	logFile *os.File
 }
 
-var LoggerSys *ELogger
+var (
+	logPath = "log"
+)
 
-func CreateLogger(name string) (*ELogger, error) {
-	logfile, err:=os.OpenFile(name,os.O_APPEND|os.O_CREATE, os.FileMode(0666))
-	if err != nil{
-		return nil, err
+func init() {
+	var logger ELogger
+	log.SetOutput(&logger)
+
+	os.MkdirAll(logPath, os.ModeDir)
+}
+
+func LogInfo(v ...interface{}) {
+	log.Printf("Info: %v \n", strings.TrimRight(fmt.Sprintln(v...), "\n"))
+}
+
+func LogError(v ...interface {}) {
+	log.Printf("Error: %v \n", strings.TrimRight(fmt.Sprintln(v...), "\n"))
+}
+
+func getLogFile(t time.Time) string {
+	return fmt.Sprintf("%s/goserver%d-%d-%d.log", logPath, t.Year(), t.Month(), t.Day())
+}
+
+func (this *ELogger) Write(p []byte) (int, error) {
+	if true {
+		os.Stdout.Write(p)
 	}
-	logger:=log.New(logfile,"",log.Ldate|log.Ltime|log.Llongfile)
 
-	elogger := &ELogger{}
-	elogger.Log = logger
+	fileName := getLogFile(time.Now())
+	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, os.FileMode(0644))
+	if err != nil {
+		os.Stdout.Write([]byte(fmt.Sprintf("can not open log file:%s r:%v\n", fileName, err)))
+		return 0, err
+	}
 
-	return elogger, nil
-}
-
-func (this *ELogger) Close() {
-	this.logFile.Close()
-}
-
-func (l *ELogger) Printf(format string, v ...interface{}) {
-	l.Log.Output(2, fmt.Sprintf(format, v...))
-}
-
-// Print calls l.Output to print to the logger.
-// Arguments are handled in the manner of fmt.Print.
-func (l *ELogger) Print(v ...interface{}) { l.Log.Output(2, fmt.Sprint(v...)) }
-
-// Println calls l.Output to print to the logger.
-// Arguments are handled in the manner of fmt.Println.
-func (l *ELogger) Println(v ...interface{}) { l.Log.Output(2, fmt.Sprintln(v...)) }
-
-// Fatal is equivalent to l.Print() followed by a call to os.Exit(1).
-func (l *ELogger) Fatal(v ...interface{}) {
-	l.Log.Output(2, fmt.Sprint(v...))
-	os.Exit(1)
-}
-
-// Fatalf is equivalent to l.Printf() followed by a call to os.Exit(1).
-func (l *ELogger) Fatalf(format string, v ...interface{}) {
-	l.Log.Output(2, fmt.Sprintf(format, v...))
-	os.Exit(1)
-}
-
-// Fatalln is equivalent to l.Println() followed by a call to os.Exit(1).
-func (l *ELogger) Fatalln(v ...interface{}) {
-	l.Log.Output(2, fmt.Sprintln(v...))
-	os.Exit(1)
+	return file.Write(p)
 }

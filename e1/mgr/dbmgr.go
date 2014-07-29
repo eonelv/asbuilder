@@ -4,7 +4,8 @@ import (
 	SQL "database/sql"
 	_ "github.com/mattn/go-sqlite3"
 	"e1/db"
-	"e1/log"
+	_ "e1/log"
+	. "e1/log"
 )
 
 type DataBaseMgr struct {
@@ -16,12 +17,12 @@ var DBMgr DataBaseMgr
 func CreateDBMgr(path string) bool {
 	db, err := SQL.Open("sqlite3", path)
 	if err != nil {
-		log.LoggerSys.Print("DataBase Connect Error %s \n", err.Error())
+		LogInfo("DataBase Connect Error %s \n", err.Error())
 		return false
 	}
 	DBMgr = DataBaseMgr{}
 	DBMgr.dbServer = db
-	log.LoggerSys.Print("DataBase connect success.")
+	LogInfo("DataBase connect success.")
 	return true
 }
 

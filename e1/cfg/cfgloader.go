@@ -3,11 +3,8 @@ package cfg
 import (
 	"os"
 	"bufio"
-	"fmt"
-	"io"
 	"strings"
 	_ "github.com/mattn/go-sqlite3"
-	"e1/log"
 )
 const (
 	SERVER_PORT string = "SERVER_PORT"
@@ -18,33 +15,28 @@ const (
 )
 
 var ServerCfg map[string]string
-func LoadCfg() bool{
+func LoadCfg() (bool, error) {
 	userFile := "server.cfg"
 
 	file,err := os.OpenFile(userFile, os.O_RDONLY, os.ModeAppend)
 
 	if err != nil {
-		fmt.Println(err)
-		return false
+		return false, err
 	}
 	defer file.Close()
 
-	reader := bufio.NewReader(file)
 	ServerCfg = make(map[string]string)
-	for {
-		lineDatas, _, err := reader.ReadLine()
-		if err != nil && err != io.EOF {
-			return false
-		}
-		line := string(lineDatas)
+	// using scanner to read config file
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		// expression match
 		lineArray := strings.Split(line, "=")
 		if len(lineArray) >= 2 {
 			ServerCfg[lineArray[0]] = lineArray[1]
 		}
-		if err != nil && err == io.EOF {
-			break
-		}
 	}
-	log.LoggerSys.Print("Server config load success.")
-	return true
+	return true, nil
 }
