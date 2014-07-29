@@ -11,6 +11,7 @@ import (
 	"runtime"
 	. "e1/log"
 	_ "e1/log"
+	"fmt"
 )
 
 func main() {
@@ -28,7 +29,7 @@ func Start() {
 		os.Exit(100)
 	}
 	LogInfo("Load server config success.")
-	if !mgr.CreateDBMgr(cfg.ServerCfg[cfg.SERVER_HOME] + "/" + cfg.ServerCfg[cfg.DB_NAME]) {
+	if !mgr.CreateDBMgr(cfg.GetServerHome() + "/" + cfg.GetDBName()) {
 		LogError("Connect dataBase error")
 		os.Exit(101)
 	}
@@ -57,7 +58,7 @@ func checkError(err error){
 }
 
 func processTCP() {
-	service := ":" + cfg.ServerCfg[cfg.SERVER_PORT]
+	service := fmt.Sprintf(":%d",  cfg.GetServerPort())
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", service)
 	checkError(err)
 	listener, err := net.ListenTCP("tcp", tcpAddr)

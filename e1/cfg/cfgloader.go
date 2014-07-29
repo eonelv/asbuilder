@@ -5,16 +5,20 @@ import (
 	"bufio"
 	"strings"
 	_ "github.com/mattn/go-sqlite3"
-)
-const (
-	SERVER_PORT string = "SERVER_PORT"
-	SERVER_HOME string = "SERVER_HOME"
-	DB_NAME string = "DB_NAME"
-	BUILD_CMD string = "BUILD_CMD"
-	BUILD_CMD_SP string = "BUILD_CMD_SP"
+	"strconv"
 )
 
-var ServerCfg map[string]string
+type ServerConfig struct {
+	ServerPort int
+	ServerHome string
+	DBName string
+	BuildCmd string
+	BuildCmdSP string
+	isDebug bool
+}
+
+var srvCfg ServerConfig
+var serverCfg map[string]string
 func LoadCfg() (bool, error) {
 	userFile := "server.cfg"
 
@@ -25,8 +29,8 @@ func LoadCfg() (bool, error) {
 	}
 	defer file.Close()
 
-	ServerCfg = make(map[string]string)
-	// using scanner to read config file
+	serverCfg = make(map[string]string)
+
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 
@@ -35,8 +39,42 @@ func LoadCfg() (bool, error) {
 		// expression match
 		lineArray := strings.Split(line, "=")
 		if len(lineArray) >= 2 {
-			ServerCfg[lineArray[0]] = lineArray[1]
+			serverCfg[lineArray[0]] = lineArray[1]
 		}
 	}
+	srvCfg = ServerConfig{}
+	srvCfg.ServerHome = serverCfg["SERVER_HOME"]
+	srvCfg.ServerPort, _ = strconv.Atoi(serverCfg["SERVER_PORT"])
+	srvCfg.BuildCmd = serverCfg["BUILD_CMD"]
+	srvCfg.BuildCmdSP = serverCfg["BUILD_CMD_SP"]
+	srvCfg.DBName = serverCfg["DB_NAME"]
+	srvCfg.isDebug, _ = strconv.ParseBool(serverCfg["IS_DEBUG"])
+
 	return true, nil
 }
+
+func  GetServerPort() int {
+	return srvCfg.ServerPort
+}
+
+func GetServerHome() string {
+	return srvCfg.ServerHome
+}
+
+func GetCmd() string {
+	return srvCfg.BuildCmd
+}
+
+func GetCmdSP() string {
+	return srvCfg.BuildCmdSP
+}
+
+func GetDBName() string {
+	return srvCfg.DBName
+}
+
+func IsDebug() bool {
+	return srvCfg.isDebug
+}
+
+

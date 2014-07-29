@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 	"strings"
+	. "e1/cfg"
 )
 
 type ELogger struct {
@@ -35,7 +36,7 @@ func getLogFile(t time.Time) string {
 }
 
 func (this *ELogger) Write(p []byte) (int, error) {
-	if true {
+	if IsDebug() {
 		os.Stdout.Write(p)
 	}
 

@@ -53,9 +53,9 @@ func (this *MsgBuild) Process(p interface{}) {
 	case QUERY:
 		this.query(puser)
 	case BUILD:
-		this.build(puser, cfg.ServerCfg[cfg.BUILD_CMD])
+		this.build(puser, cfg.GetCmd())
 	case BUILD_SP:
-		this.build(puser, cfg.ServerCfg[cfg.BUILD_CMD_SP])
+		this.build(puser, cfg.GetCmdSP())
 	}
 }
 
@@ -73,7 +73,7 @@ func (this *MsgBuild) build(user *User, cmds string) {
 	projectName := rows[0].GetString("pname_en")
 	buildName := rows[0].GetString("pvname_en")
 
-	cmds =  cfg.ServerCfg[cfg.SERVER_HOME] + "/build/" +projectName + "/" + buildName + "/" + cmds;
+	cmds =  cfg.GetServerHome() + "/build/" +projectName + "/" + buildName + "/" + cmds;
 
 	go execBuild(cmds, project, user, this)
 
