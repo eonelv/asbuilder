@@ -98,9 +98,6 @@ func (client *TCPClient) processLogin(header *PackHeader, datas []byte) {
 			fmt.Println(err)
 		}
 	}()
-	type MSG_CONNECT struct {
-		Connet byte
-	}
 
 	client.isLogin = true
 	go client.Sender.Start()

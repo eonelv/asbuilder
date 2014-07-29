@@ -86,6 +86,11 @@ func (user *User) userLogin(msg *Command) {
 }
 
 func (user *User) userOffline(msg *Command) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("User processClientMsg failed:", err, " cmd:", msg.Cmd)
+		}
+	}()
 	if msg.RetChan != user.netChan {
 		return
 	}

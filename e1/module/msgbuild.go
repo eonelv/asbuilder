@@ -6,9 +6,9 @@ import (
 	. "e1/core"
 	"e1/utils"
 	"e1/mgr"
-	"os/exec"
-	"e1/log"
 	"e1/cfg"
+	"e1/log"
+	"os/exec"
 )
 
 const (
@@ -59,11 +59,10 @@ func (this *MsgBuild) Process(p interface{}) {
 }
 
 func (this *MsgBuild) build(user *User, cmds string) {
-	var err error
 	project := &Project{}
 	utils.Byte2Struct(reflect.ValueOf(project), this.PData)
-	rows, err1 := mgr.DBMgr.PreQuery("select pname_en, pvname_en, isBuilding from t_vb_project where id = ?", project.ID)
-	if err1 != nil {
+	rows, err := mgr.DBMgr.PreQuery("select pname_en, pvname_en, isBuilding from t_vb_project where id = ?", project.ID)
+	if err != nil {
 		return
 	}
 	isBuilding := rows[0].GetBoolean("isBuilding")
@@ -75,11 +74,16 @@ func (this *MsgBuild) build(user *User, cmds string) {
 
 	cmds =  cfg.ServerCfg[cfg.SERVER_HOME] + "build/" +projectName + "/" + buildName + "/" + cmds;
 
-	fmt.Println(cmds)
-	_, err = mgr.DBMgr.PreExecute("update t_vb_project set isBuilding = 1 where id = ?", project.ID)
+	go execBuild(cmds, project, user, this)
+
+}
+
+func execBuild(cmds string, project *Project, user *User, msgBuild *MsgBuild) {
+	var err error
+	_, err = mgr.DBMgr.PreExecute("update t_vb_project set isBuilding = 1, builder=? where id = ?", string(user.ID), project.ID)
 
 	defer func() {
-		_, err = mgr.DBMgr.PreExecute("update t_vb_project set isBuilding = 0 where id = ?", project.ID)
+		_, err = mgr.DBMgr.PreExecute("update t_vb_project set isBuilding = 0, builder=? where id = ?", "", project.ID)
 		if err != nil {
 			return
 		}
@@ -91,8 +95,8 @@ func (this *MsgBuild) build(user *User, cmds string) {
 	}
 
 	msgReturn := &MsgBuild{}
-	msgReturn.Action = this.Action
-	msgReturn.Num = this.Num
+	msgReturn.Action = msgBuild.Action
+	msgReturn.Num = msgBuild.Num
 
 	msgBuildInfo := &BuildInfo{}
 	msgBuildInfo.ID = project.ID
@@ -121,12 +125,13 @@ func (this *MsgBuild) build(user *User, cmds string) {
 		return
 	}
 	msgReturn.PData = tempData
-	UserMgr.BroadcastMessage(msgReturn)
+
+	defer UserMgr.BroadcastMessage(msgReturn)
 	fmt.Println("编译完成", cmds)
 }
 
 func (this *MsgBuild) query(user *User) {
-	rows, err := mgr.DBMgr.PreQuery("select id, pname, pvname, isBuilding from t_vb_project")
+	rows, err := mgr.DBMgr.PreQuery("select id, pname, pvname, isBuilding, builder from t_vb_project")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -138,8 +143,9 @@ func (this *MsgBuild) query(user *User) {
 		project.ID = v.GetUint64("id")
 		utils.CopyArray(reflect.ValueOf(&project.Name), []byte(v.GetString("pname")))
 		utils.CopyArray(reflect.ValueOf(&project.Version), []byte(v.GetString("pvname")))
-		if v.GetBoolean("isBuilding") {
-			utils.CopyArray(reflect.ValueOf(&project.Builder), []byte(user.ID))
+		isBuilding := v.GetBoolean("isBuilding")
+		if isBuilding {
+			utils.CopyArray(reflect.ValueOf(&project.Builder), []byte(v.GetString("builder")))
 		}
 		data,_ := utils.Struct2Bytes(reflect.ValueOf(project))
 		totalData = append(totalData, data ...)

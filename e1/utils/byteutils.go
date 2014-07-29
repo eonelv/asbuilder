@@ -66,7 +66,6 @@ func Byte2Struct(dataType reflect.Value, bytes1 []byte) (bool, int) {
 			datas := bytes1[index:index+4]
 			f.SetInt(int64(binary.BigEndian.Uint32(datas)))
 			index += 4
-			fmt.Printf("current position is %d", index)
 		case reflect.Int64:
 			datas := bytes1[index:index+8]
 			f.SetInt(int64(binary.BigEndian.Uint64(datas)))
