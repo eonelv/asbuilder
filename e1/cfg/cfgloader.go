@@ -14,6 +14,7 @@ type ServerConfig struct {
 	DBName string
 	BuildCmd string
 	BuildCmdSP string
+	BuildCmdSPInner string
 	isDebug bool
 }
 
@@ -47,6 +48,7 @@ func LoadCfg() (bool, error) {
 	srvCfg.ServerPort, _ = strconv.Atoi(serverCfg["SERVER_PORT"])
 	srvCfg.BuildCmd = serverCfg["BUILD_CMD"]
 	srvCfg.BuildCmdSP = serverCfg["BUILD_CMD_SP"]
+	srvCfg.BuildCmdSPInner = serverCfg["BUILD_CMD_SP_INNER"]
 	srvCfg.DBName = serverCfg["DB_NAME"]
 	srvCfg.isDebug, _ = strconv.ParseBool(serverCfg["IS_DEBUG"])
 
@@ -67,6 +69,10 @@ func GetCmd() string {
 
 func GetCmdSP() string {
 	return srvCfg.BuildCmdSP
+}
+
+func GetCmdSPInner() string {
+	return srvCfg.BuildCmdSPInner
 }
 
 func GetDBName() string {

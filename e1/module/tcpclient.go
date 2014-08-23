@@ -66,11 +66,12 @@ func ProcessRecv(client *TCPClient) {
 			}
 			return
 		}
+
 		header := &PackHeader{}
 		Byte2Struct(reflect.ValueOf(header), headerBytes)
-
 		bodyBytes := make([]byte, header.Length-HEADER_LENGTH)
 		_, err = io.ReadFull(conn, bodyBytes)
+
 		if err != nil {
 			LogError(err.Error())
 			break
