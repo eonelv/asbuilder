@@ -53,13 +53,13 @@ func (this *MsgBuild) Process(p interface{}) {
 	case QUERY:
 		this.query(puser)
 	case BUILD:
-		this.build(puser, cfg.GetCmd())
+		this.build(puser, false)
 	case BUILD_SP:
-		this.build(puser, cfg.GetCmdSP())
+		this.build(puser, true)
 	}
 }
 
-func (this *MsgBuild) build(user *User, cmds string) {
+func (this *MsgBuild) build(user *User, isPatch bool) {
 	project := &Project{}
 	utils.Byte2Struct(reflect.ValueOf(project), this.PData)
 	rows, err := mgr.DBMgr.PreQuery("select pname_en, pvname_en, isBuilding from t_vb_project where id = ?", project.ID)
@@ -74,17 +74,21 @@ func (this *MsgBuild) build(user *User, cmds string) {
 	projectName := rows[0].GetString("pname_en")
 	buildName := rows[0].GetString("pvname_en")
 
-	var cmds2 string = ""
-	if cmds == cfg.GetCmdSP() {
-		cmds2 = cfg.GetServerHome() + "/build/" +projectName + "/" + buildName + "/" + cfg.GetCmdSPInner()
-	}
-	cmds =  cfg.GetServerHome() + "/build/" +projectName + "/" + buildName + "/" + cmds
+//	var cmds2 string = ""
+//	cmds =  cfg.GetServerHome() + "/build/" +projectName + "/" + buildName + "/"  + cfg.GetCmd()
 
-	go execBuild(cmds, cmds2, project, user, this)
+//	if cmds == cfg.GetCmdSP() {
+//		cmds2 = cfg.GetServerHome() + "/build/" +projectName + "/" + buildName + "/" + cfg.GetCmdSPInner()
+//	}
+//	cmds =  cfg.GetServerHome() + "/build/" +projectName + "/" + buildName + "/" + cfg.GetCmd()
+
+	go execBuild(projectName, buildName, isPatch, project, user, this)
 
 }
 
-func execBuild(cmds string, cmds2 string, project *Project, user *User, msgBuild *MsgBuild) {
+func execBuild(projectName string, buildName string, isPatch bool, project *Project, user *User, msgBuild *MsgBuild) {
+
+	cmds :=  cfg.GetServerHome() + "/build/" +projectName + "/" + buildName + "/"  + cfg.GetCmd()
 	var err error
 	_, err = mgr.DBMgr.PreExecute("update t_vb_project set isBuilding = 1, builder=? where id = ?", string(user.ID), project.ID)
 
@@ -108,6 +112,7 @@ func execBuild(cmds string, cmds2 string, project *Project, user *User, msgBuild
 	msgBuildInfo.ID = project.ID
 	msgBuildInfo.Result = 1
 
+	projectID := fmt.Sprintf("%v", project.ID)
 	tempData, ok := utils.Struct2Bytes(reflect.ValueOf(msgBuildInfo))
 	if !ok {
 		return
@@ -115,9 +120,9 @@ func execBuild(cmds string, cmds2 string, project *Project, user *User, msgBuild
 	msgReturn.PData = tempData
 	UserMgr.BroadcastMessage(msgReturn)
 	//执行编译
-	if cmds2 != "" {
-		LogInfo("Compile sp", cmds2)
-		cmd2 := exec.Command(cmds2, "", "")
+	if isPatch {
+		LogInfo("Compile Patch Inner", cmds, projectName, buildName, "0", "0")
+		cmd2 := exec.Command(cmds, projectID, projectName, buildName, "0", "0")
 
 		bytes2, err2 := cmd2.Output()
 		if err2 == nil {
@@ -125,17 +130,28 @@ func execBuild(cmds string, cmds2 string, project *Project, user *User, msgBuild
 		} else {
 			LogInfo(err, string(bytes2))
 		}
-	}
 
-	LogInfo("Compile sp", cmds)
-	cmd := exec.Command(cmds, "", "")
+		LogInfo("Compile Patch inner", cmds, projectName, buildName, 1, 0)
+		cmd := exec.Command(cmds, projectID, projectName, buildName, "1", "0")
 
-	var bytes []byte
-	bytes, err = cmd.Output()
-	if err == nil {
-		LogInfo(string(bytes))
+		var bytes []byte
+		bytes, err = cmd.Output()
+		if err == nil {
+			LogInfo(string(bytes))
+		} else {
+			LogInfo(err, string(bytes))
+		}
 	} else {
-		LogInfo(err, string(bytes))
+		LogInfo("Compile", cmds, projectName, buildName, 0, 1)
+		cmd := exec.Command(cmds, projectID, projectName, buildName, "0", "1")
+
+		var bytes []byte
+		bytes, err = cmd.Output()
+		if err == nil {
+			LogInfo(string(bytes))
+		} else {
+			LogInfo(err, string(bytes))
+		}
 	}
 
 	msgBuildInfo.Result = 2
