@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	_ "e1/log"
 	. "e1/log"
+	
 )
 
 const (
@@ -142,7 +143,7 @@ func execBuild(projectName string, buildName string, isPatch bool, project *Proj
 			LogInfo(err, string(bytes))
 		}
 	} else {
-		LogInfo("Compile", cmds, projectName, buildName, 0, 1)
+		LogInfo("Compile", cmds, projectID, projectName, buildName, 0, 1)
 		cmd := exec.Command(cmds, projectID, projectName, buildName, "0", "1")
 
 		var bytes []byte
@@ -185,7 +186,6 @@ func (this *MsgBuild) query(user *User) {
 		data,_ := utils.Struct2Bytes(reflect.ValueOf(project))
 		totalData = append(totalData, data ...)
 	}
-
 	this.PData = totalData
 	user.Sender.Send(this)
 }
