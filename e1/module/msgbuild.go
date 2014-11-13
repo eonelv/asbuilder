@@ -10,7 +10,10 @@ import (
 	"os/exec"
 	_ "e1/log"
 	. "e1/log"
-	
+
+	"bufio"
+	"strings"
+	"io"
 )
 
 const (
@@ -35,6 +38,7 @@ type Project struct {
 type BuildInfo struct {
 	ID uint64
 	Result uint16
+	Message []byte
 }
 
 func (this *MsgBuild) GetNetBytes() ([]byte, bool) {
@@ -122,40 +126,58 @@ func execBuild(projectName string, buildName string, isPatch bool, project *Proj
 	UserMgr.BroadcastMessage(msgReturn)
 	//执行编译
 	if isPatch {
+		var stdout io.ReadCloser
+		var r *bufio.Reader
 		LogInfo("Compile Patch Inner", cmds, projectName, buildName, "0", "0")
 		cmd2 := exec.Command(cmds, projectID, projectName, buildName, "0", "0")
 
-		bytes2, err2 := cmd2.Output()
-		if err2 == nil {
-			LogInfo(string(bytes2))
-		} else {
-			LogInfo(err, string(bytes2))
-		}
+		stdout, _ = cmd2.StdoutPipe()
+		r = bufio.NewReader(stdout)
+		cmd2.Start()
+
+		reportStage(r, msgReturn, msgBuildInfo, "Fisrt Package: ")
+
+//		bytes2, err2 := cmd2.Output()
+//		if err2 == nil {
+//			LogInfo(string(bytes2))
+//		} else {
+//			LogInfo(err, string(bytes2))
+//		}
 
 		LogInfo("Compile Patch inner", cmds, projectName, buildName, 1, 0)
 		cmd := exec.Command(cmds, projectID, projectName, buildName, "1", "0")
+		stdout, _ = cmd.StdoutPipe()
+		r = bufio.NewReader(stdout)
+		cmd.Start()
 
-		var bytes []byte
-		bytes, err = cmd.Output()
-		if err == nil {
-			LogInfo(string(bytes))
-		} else {
-			LogInfo(err, string(bytes))
-		}
+		reportStage(r, msgReturn, msgBuildInfo, "Second Package: ")
+
+//		var bytes []byte
+//		bytes, err = cmd.Output()
+//		if err == nil {
+//			LogInfo(string(bytes))
+//		} else {
+//			LogInfo(err, string(bytes))
+//		}
 	} else {
 		LogInfo("Compile", cmds, projectID, projectName, buildName, 0, 1)
 		cmd := exec.Command(cmds, projectID, projectName, buildName, "0", "1")
 
-		var bytes []byte
-		bytes, err = cmd.Output()
-		if err == nil {
-			LogInfo(string(bytes))
-		} else {
-			LogInfo(err, string(bytes))
-		}
+		stdout, _ := cmd.StdoutPipe()
+		r := bufio.NewReader(stdout)
+		cmd.Start()
+
+		reportStage(r, msgReturn, msgBuildInfo, "")
+//		var bytes []byte
+//		bytes, err = cmd.Output()
+//		if err == nil {
+//			LogInfo(string(bytes))
+//		} else {
+//			LogInfo(err, string(bytes))
+//		}
 	}
 
-	msgBuildInfo.Result = 2
+	msgBuildInfo.Result = 100
 	tempData, ok = utils.Struct2Bytes(reflect.ValueOf(msgBuildInfo))
 	if !ok {
 		return
@@ -164,6 +186,34 @@ func execBuild(projectName string, buildName string, isPatch bool, project *Proj
 
 	defer UserMgr.BroadcastMessage(msgReturn)
 	LogInfo("编译完成", cmds)
+}
+
+func reportStage(r *bufio.Reader, msgReturn *MsgBuild, msgBuildInfo *BuildInfo, extMsg string) {
+	for  {
+		lineBytes, _, errPipe := r.ReadLine()
+		line := string(lineBytes)
+		if (strings.HasPrefix(line, "SysBuildMsg")) {
+			stage := strings.Split(line, "=")
+			outmsg := extMsg + stage[1]
+
+			msgBuildInfo.Result = 2
+			msgBuildInfo.Message = []byte(outmsg)
+			tempData, ok := utils.Struct2Bytes(reflect.ValueOf(msgBuildInfo))
+			if !ok {
+				continue
+			}
+			msgReturn.PData = tempData
+
+			UserMgr.BroadcastMessage(msgReturn)
+		}
+
+		if errPipe == nil {
+			LogInfo(string(line))
+		} else {
+			LogInfo("调试输出", errPipe, string(line))
+			break
+		}
+	}
 }
 
 func (this *MsgBuild) query(user *User) {
