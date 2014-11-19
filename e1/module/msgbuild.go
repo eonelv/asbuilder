@@ -217,7 +217,7 @@ func reportStage(r *bufio.Reader, msgReturn *MsgBuild, msgBuildInfo *BuildInfo, 
 }
 
 func (this *MsgBuild) query(user *User) {
-	rows, err := mgr.DBMgr.PreQuery("select id, pname, pvname, isBuilding, builder from t_vb_project")
+	rows, err := mgr.DBMgr.PreQuery("select id, pname, pvname, isBuilding, builder from t_vb_project where status=1")
 	if err != nil {
 		fmt.Println(err)
 		return
