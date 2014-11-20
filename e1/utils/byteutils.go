@@ -28,10 +28,20 @@ func Struct2Bytes(this reflect.Value) ([]byte, bool) {
 				LogError("StructToBytes err. ", f.Kind())
 				return nil, false
 			}
+		} else if f.Kind() == reflect.Bool {
+			boolByte := []byte{0}
+			if v.Field(i).Bool() {
+				boolByte = []byte{1}
+			}
+			err := binary.Write(binData, binary.BigEndian, boolByte)
+			if err != nil {
+				LogError("StructToBytes err.", f.Kind(), f.Bool())
+				return nil, false
+			}
 		} else {
 			err := binary.Write(binData, binary.BigEndian, f.Interface())
 			if err != nil {
-				LogError("StructToBytes err. ", f.Kind())
+				LogError("StructToBytes err. ", f.Kind(), f.Bool())
 				return nil, false
 			}
 		}

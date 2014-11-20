@@ -57,6 +57,9 @@ func (this *UserManager) processUserLogin(msg *core.Command) {
 
 func (this *UserManager)processBroadCast(msg core.NetMsg) {
 	for _, u := range this.users {
+		if u.Status == USER_STATUS_OFFLINE{
+			continue
+		}
 		u.Sender.Send(msg)
 		LogError("BroadcastMessage to User," ,u.ID, u.Status)
 	}

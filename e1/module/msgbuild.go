@@ -30,6 +30,7 @@ type MsgBuild struct {
 
 type Project struct {
 	ID uint64
+	IsBuilding bool
 	Name NAME_STRING
 	Version NAME_STRING
 	Builder NAME_STRING
@@ -227,10 +228,11 @@ func (this *MsgBuild) query(user *User) {
 	for _,v := range rows {
 		project := &Project{}
 		project.ID = v.GetUint64("id")
+		project.IsBuilding = v.GetBoolean("isBuilding")
 		utils.CopyArray(reflect.ValueOf(&project.Name), []byte(v.GetString("pname")))
 		utils.CopyArray(reflect.ValueOf(&project.Version), []byte(v.GetString("pvname")))
-		isBuilding := v.GetBoolean("isBuilding")
-		if isBuilding {
+
+		if project.IsBuilding {
 			utils.CopyArray(reflect.ValueOf(&project.Builder), []byte(v.GetString("builder")))
 		}
 		data,_ := utils.Struct2Bytes(reflect.ValueOf(project))
