@@ -1,14 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?> 
 <!-- 默认执行"build"任务 -->
-<project name="betraygods" basedir="." default="build"> 
+<project name="AppointGods" basedir="." default="build"> 
 	<!--以下是需要修改的部分-->
 	<property file="temp.properties"/>
 	<property name="FLEX_HOME" value="D:/ASBuilder/AIRSDK4.0"/> 
     <property name="DEPLOY_DIR" location="deploy/bin"/> 
     <property name="SOURCE_DIR" location="source/src"/>
-    <property name="LIB_PATH" location="source/lib"/> 
+    <property name="LIB_PATH" location="swcs"/> 
 	<property name="ELIB_PATH" location="source/elib"/> 
 	<property name="RELEASE_PATH" location="deploy/release"/> 
+	<property name="APP_NAME" value="appointgods"/> 
+	<property name="APP_MAINCLASS" value="AppointGods.as"/> 
     
 	
 	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
@@ -28,117 +30,74 @@
     <!--编译flash-->
     <target name="compile">
         <mxmlc
-            file="${SOURCE_DIR}/BetrayGods.as"
-            output="${DEPLOY_DIR}/betraygods_${MAIN_APP}.swf"
+            file="${SOURCE_DIR}/${APP_MAINCLASS}"
+            output="${DEPLOY_DIR}/${APP_NAME}_${MAIN_APP}.swf"
             static-rsls="false"
             accessible="true"
             debug="false">
             <!--设置源代码位置-->
             <source-path path-element="${SOURCE_DIR}"/>
 			<source-path path-element="${ELIB_PATH}"/>
-			<source-path path-element="${LIB_PATH}/away3d/src"/>
-			<source-path path-element="${LIB_PATH}/e1achm"/>
-			<source-path path-element="${LIB_PATH}/feathers/source"/>
-			<source-path path-element="${LIB_PATH}/greensock"/>
-			<source-path path-element="${LIB_PATH}/minicomps/src"/>
-			<source-path path-element="${LIB_PATH}/resourceparsers"/>
-			<source-path path-element="${LIB_PATH}/richfield"/>
-			<source-path path-element="${LIB_PATH}/starling/src"/>
 			<source-path path-element="source/ag"/>
-			<source-path path-element="${LIB_PATH}/libs"/>
             <!--指定编译的swc-->
-            <library-path dir="${LIB_PATH}/libs" includes="*">
-				<include name="e1alib.swc"/>
+            <library-path dir="${LIB_PATH}" includes="*">
+				<include name="e1swcs.swc"/>
             </library-path>
         </mxmlc>
     </target>
 	
 	<target name="copy">
-		<copy todir="${RELEASE_PATH}" file="${DEPLOY_DIR}/betraygods_${MAIN_APP}.swf" /> 
+		<copy todir="${RELEASE_PATH}" file="${DEPLOY_DIR}/${APP_NAME}_${MAIN_APP}.swf" /> 
+		<copy todir="${RELEASE_PATH}" file="${DEPLOY_DIR}/${APP_NAME}_${MAIN_APP}.enc" />
 	</target>
-	
-	<target name="mailsucc">
-		<tstamp>
-			<format property="datemail" pattern="yyyy-MM-dd HH:mm" />
-		</tstamp>
-		<tstamp>
-			<format property="date" pattern="yyyy.MM.dd" />
-		</tstamp>
-        <mail from="${MAIL_FROM}" 
-            tolist="${MAIL_TO}" 
-            mailhost="${MAIL_HOST}"
-			mailport="${MAIL_PORT}"
-            user="${MAIL_USER}" 
-            password="${MAIL_PASS}" 
-            subject="编译成功 ${PROJECT_NAME}_${PROJECT_VERSION} ANT Email(${datemail})"
-			message="你提交的${PROJECT_NAME}_${PROJECT_VERSION}编译成功，输出包为${PROJECT_SHAR_BASE}betraygods_${PROJECT_VERSION}_${date}_${PNUMBER}.zip,\r\n输出版本号：${VERSION}"
-			messagemimetype="text/html">
-			<fileset dir="log">
-				<include name="*.log" />
-			</fileset>
-         </mail>
-    </target>
-	
-	<target name="mailzip">
-		<tstamp>
-			<format property="datemail" pattern="yyyy-MM-dd HH:mm" />
-		</tstamp>
+	<target name="encrypt">
+		<exec executable="encrypt.cmd" failonerror="false" dir=".">
+			<arg line="${DEPLOY_DIR} ${APP_NAME}_${MAIN_APP}.swf"></arg>
+		</exec>
+	</target>
+	<target name="filesplit">
+		<exec executable="buildafter.cmd" failonerror="false" dir=".">
+			<arg line="${RELEASE_PATH}/${APP_NAME}_${MAIN_APP}.enc .enc"></arg>
+		</exec>
+	</target>
+	<target name="mail">
 		<tstamp>
 			<format property="date" pattern="yyyy.MM.dd" />
 		</tstamp>
-        <mail from="${MAIL_FROM}" 
-            tolist="${MAIL_TO}" 
-            mailhost="${MAIL_HOST}"
-			mailport="${MAIL_PORT}"
-            user="${MAIL_USER}" 
-            password="${MAIL_PASS}" 
-            subject="编译失败，但资源包已出 ${PROJECT_NAME}_${PROJECT_VERSION} ANT Email(${datemail})"
-			message="你提交的${PROJECT_NAME}_${PROJECT_VERSION}编译成功，输出包为${PROJECT_SHAR_BASE}${FILE_NAME}"
-            messagemimetype="text/html">
-			<fileset dir="log">
-				<include name="*.log" />
-			</fileset>
-         </mail>
-    </target>
-	
-	<target name="mailfaild">
+		<if>
+			<equals arg1="${ISPATCH}" arg2="0"/>
+			<then>
+				<if>
+					<equals arg1="${ISUPDATE}" arg2="1"/>
+					<then>
+						<property name="FILE_NAME" value="${PROJECT_NAME}_${PROJECT_VERSION}_${date}_${PNUMBER}.zip"/> 
+					</then>
+				<else>
+					<property name="FILE_NAME" value="sp_${PROJECT_NAME}_${PROJECT_VERSION}_${date}_${PNUMBER}_${VERSION}_inner.zip"/> 
+				</else>
+				</if>
+			</then>
+		<else>
+			<property name="FILE_NAME" value="sp_${PROJECT_NAME}_${PROJECT_VERSION}_${date}_${PNUMBER}_${VERSION}.zip"/> 
+		</else>
+		</if>
+		<exec executable="mail.cmd" failonerror="false" dir=".">
+			<arg line="1"></arg>
+			<arg line="${FILE_NAME}"></arg>
+			<arg line="${VERSION}"></arg>
+		</exec>
+	</target>
+	<target name="mailf">
 		<tstamp>
-			<format property="datemail" pattern="yyyy-MM-dd HH:mm" />
+			<format property="date" pattern="yyyy.MM.dd" />
 		</tstamp>
-        <mail from="${MAIL_FROM}" 
-            tolist="${MAIL_TO}" 
-            mailhost="${MAIL_HOST}"
-			mailport="${MAIL_PORT}"
-            user="${MAIL_USER}" 
-            password="${MAIL_PASS}" 
-            subject="编译失败 ${PROJECT_NAME}_${PROJECT_VERSION} ANT Email(${datemail})"
-			message="你提交的${PROJECT_NAME}_${PROJECT_VERSION}编译失败，请查看${PROJECT_SHAR_BASE}/log/${PROJECT_LOG_FILE}"
-            messagemimetype="text/html">
-			<fileset dir="log">
-				<include name="*.log" />
-			</fileset>
-         </mail>
-    </target>
-	
-	<target name="mailunbuild">
-		<tstamp>
-			<format property="datemail" pattern="yyyy-MM-dd HH:mm" />
-		</tstamp>
-        <mail from="${MAIL_FROM}" 
-            tolist="${MAIL_TO}" 
-            mailhost="${MAIL_HOST}"
-			mailport="${MAIL_PORT}"
-            user="${MAIL_USER}" 
-            password="${MAIL_PASS}" 
-            subject="未编译 ${PROJECT_NAME}_${PROJECT_VERSION} ANT Email(${datemail})"
-			message="你提交的${PROJECT_NAME}_${PROJECT_VERSION}未编译，没有任何文件输出"
-            messagemimetype="text/html">
-			<fileset dir="log">
-				<include name="*.log" />
-			</fileset>
-         </mail>
-    </target>
-	
+		<exec executable="mail.cmd" failonerror="false" dir=".">
+			<arg line="0"></arg>
+			<arg line="${PROJECT_NAME}_${PROJECT_VERSION}_${date}_${PNUMBER}.zip"></arg>
+			<arg line="${VERSION}"></arg>
+		</exec>
+	</target>
+
 	<target name="mkzip">
 		<tstamp>
 			<format property="date" pattern="yyyy.MM.dd" />
@@ -149,18 +108,18 @@
 				<if>
 					<equals arg1="${ISUPDATE}" arg2="1"/>
 					<then>
-						<property name="FILE_NAME" value="deploy/betraygods_${PROJECT_VERSION}_${date}_${PNUMBER}.zip"/> 
-						<zip basedir="deploy/release" zipfile="${FILE_NAME}"/>
+						<property name="FILE_NAME" value="${PROJECT_NAME}_${PROJECT_VERSION}_${date}_${PNUMBER}.zip"/> 
+						<zip basedir="${RELEASE_PATH}" zipfile="../${PROJECT_SHAR_PATH}/${FILE_NAME}"/>
 					</then>
 				<else>
-					<property name="FILE_NAME" value="deploy/sp_betraygods_${PROJECT_VERSION}_${date}_${PNUMBER}_${VERSION}_inner.zip"/> 
-					<zip basedir="deploy/release" zipfile="${FILE_NAME}"/>
+					<property name="FILE_NAME" value="sp_${PROJECT_NAME}_${PROJECT_VERSION}_${date}_${PNUMBER}_${VERSION}_inner.zip"/> 
+					<zip basedir="${RELEASE_PATH}" zipfile="../${PROJECT_SHAR_PATH}/${FILE_NAME}"/>
 				</else>
 				</if>
 			</then>
 		<else>
-			<property name="FILE_NAME" value="deploy/sp_betraygods_${PROJECT_VERSION}_${date}_${PNUMBER}_${VERSION}.zip"/> 
-			<zip basedir="deploy/release" zipfile="${FILE_NAME}"/>
+			<property name="FILE_NAME" value="sp_${PROJECT_NAME}_${PROJECT_VERSION}_${date}_${PNUMBER}_${VERSION}.zip"/> 
+			<zip basedir="${RELEASE_PATH}" zipfile="../${PROJECT_SHAR_PATH}/${FILE_NAME}"/>
 		</else>
 		</if>
     </target>
@@ -183,9 +142,11 @@
 					<equals arg1="${ISBUILD}" arg2="1"/>
 					<then>
 						<antcall target="compile"/>
+						<antcall target="encrypt"/>
 						<antcall target="copy"/>
+						<antcall target="filesplit"/>
 						<antcall target="mkzip"/>
-						<antcall target="mailsucc"/>
+						<antcall target="mail"/>
 					</then>
 					<else>
 						<if>
@@ -196,7 +157,7 @@
 							<echo message="没有更新到代码 - 将不会输出betraygods.swf" />
 						</then>
 						<else>
-							<antcall target="mailunbuild" />
+							<antcall target="mailf" />
 						</else>
 						</if>
 					</else>
@@ -211,7 +172,7 @@
 							<echo message="代码错误编译失败了 - 将不会输出betraygods.swf" />
 						</then>
 						<else>
-							<antcall target="mailfaild" />
+							<antcall target="mailf" />
 						</else>
 					</if>
 

@@ -16,21 +16,26 @@ if not exist "source"/src (svn checkout %SVN_MAIN% "source"/src)
 if not exist "source"/lib (svn checkout %SVN_LIB% "source"/lib)
 if not exist "source"/elib (svn checkout %SVN_ELIB% "source"/elib)
 if not exist "source"/res (svn checkout %SVN_RES% "source"/res)
-if not exist "source"/ag (svn checkout %SVN_UIEDITOR% "source"/ag/e1/e2d/gen)
-
+if not exist "source"/ag (svn checkout %SVN_UIEDITOR% "source"/ag)
+if not exist "swcs" (svn checkout %SVN_swcs% "swcs")
 
 :up
 if %isupdate% == 1 (
 @echo %basepath% 目录存在, 准备更新代码
-svn update source/src > log_code.txt
-svn update source/lib >> log_code.txt
-svn update source/elib >> log_code.txt
-svn update source/ag/e1/e2d/gen >> log_code.txt
-svn update source/res > log_res.txt
+svn cleanup source/src
+svn cleanup source/ag/e1/e2d/gen
+svn cleanup source/elib
+svn cleanup source/res
+svn update source/src > log_code.txt --accept tc
+svn update source/lib >> log_code.txt --accept tc
+svn update source/elib >> log_code.txt --accept tc
+svn update source/ag/e1/e2d/gen >> log_code.txt --accept tc
+svn update source/res > log_res.txt --accept tc
+svn update swcs > log_lib.txt --accept tc
 )
 
 if exist "release" (RD "release" /S /Q)
-java e1.tools.asbuilder.ASBuiler %DIRPATH%\"source" %ASBUILDER_HOME% %command% %patch% %isupdate% %DIRPATH% %DIRPATH%source\res %DIRPATH%deploy\release %DIRPATH%
+java -Xms512m -Xmx512m e1.tools.asbuilder.ASBuiler %DIRPATH%\"source" %ASBUILDER_HOME% %command% %patch% %isupdate% %DIRPATH% %DIRPATH%source\res %DIRPATH%deploy\release %DIRPATH%
 
 REM "C:\Program Files (x86)\JsonAMF\JsonAMF.exe" %DIRPATH%deploy\release
 REM java e1.tools.asbuilder.CreateAMF %DIRPATH%deploy\release

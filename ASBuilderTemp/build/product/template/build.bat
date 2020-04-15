@@ -1,6 +1,7 @@
-set projectpath=%1
-set basepath=%2
-set patch=%3
-set isupdate=%4
+set command=%1
+set projectpath=%2
+set basepath=%3
+set patch=%4
+set isupdate=%5
 cd build\%projectpath%\%basepath%
 call "buildmain.bat"

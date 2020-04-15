@@ -1,0 +1,1 @@
+java e1.tools.asbuilder.SWFEncrypter %1 %2 
